@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mediloom Pharmacy — Business Intelligence Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0f1f19;
+  --panel:#152a22;
+  --panel-2:#1b3328;
+  --line: rgba(201,169,89,0.14);
+  --line-strong: rgba(201,169,89,0.30);
+  --paper:#f3ecd9;
+  --paper-dim:#cdc4a4;
+  --amber:#cf9f43;
+  --amber-soft: rgba(207,159,67,0.14);
+  --rust:#c1502e;
+  --rust-soft: rgba(193,80,46,0.16);
+  --green:#6f9d6d;
+  --green-soft: rgba(111,157,109,0.16);
+  --rx:#5b8f8a;
+  --rx-soft: rgba(91,143,138,0.16);
+  --steel:#7e9a95;
+  --shadow: 0 14px 30px -16px rgba(0,0,0,0.55);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    linear-gradient(var(--line) 1px, transparent 1px) 0 0/38px 38px,
+    linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/38px 38px,
+    var(--ink);
+  color:var(--paper);
+  font-family:'Inter', sans-serif;
+  min-height:100vh;
+}
+.wrap{max-width:1320px;margin:0 auto;padding: 26px 20px 60px;}
+
+/* ===== Header ===== */
+.titleblock{
+  display:flex; justify-content:space-between; align-items:flex-start;
+  border-bottom: 2px solid var(--amber);
+  padding-bottom:12px; margin-bottom: 6px;
+  flex-wrap:wrap; gap:16px;
+}
+.brand{display:flex; align-items:center; gap:14px;}
+.brand-mark{
+  width:56px; height:56px; border-radius:50%;
+  border:2px solid var(--amber);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Cinzel'; font-weight:700; font-size:20px; color:var(--amber);
+  flex-shrink:0;
+  position:relative;
+}
+.brand-mark::after{
+  content:"Rx"; font-family:'Cinzel'; font-weight:700; font-size:19px; letter-spacing:1px;
+}
+.brand-title{
+  font-family:'Cinzel', serif; font-size:38px; font-weight:700;
+  color:var(--paper); line-height:1; letter-spacing:2px;
+}
+.brand-sub{
+  font-family:'Cinzel', serif; font-size:14px; color:var(--amber);
+  letter-spacing:4px; margin-top:6px; text-transform:uppercase;
+}
+.eyebrow{
+  font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:.16em;
+  color:var(--rx); text-transform:uppercase; margin-top:6px;
+}
+.stamp{
+  font-family:'IBM Plex Mono'; font-size:12px; color:var(--ink);
+  background:var(--amber); padding:10px 16px; border-radius:3px;
+  transform: rotate(-2deg);
+  box-shadow: var(--shadow);
+  text-align:center; line-height:1.5; font-weight:600;
+  white-space:nowrap;
+}
+.stamp b{display:block; font-size:15px; letter-spacing:.04em;}
+
+/* ===== Status banner ===== */
+.banner{
+  display:none;
+  font-family:'IBM Plex Mono'; font-size:12px;
+  background: var(--rust-soft); border:1px solid var(--rust);
+  color:#f0b9a4; padding:10px 14px; border-radius:4px; margin: 14px 0;
+}
+.banner.show{display:block;}
+
+/* ===== Nav tabs ===== */
+.tabs{
+  display:flex; gap:6px; flex-wrap:wrap;
+  margin: 20px 0 26px; border-bottom:1px solid var(--line-strong); padding-bottom:0;
+}
+.tab{
+  font-family:'IBM Plex Mono'; font-size:12px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--paper-dim);
+  background:transparent; border:none; cursor:pointer;
+  padding:10px 16px; border-bottom:3px solid transparent;
+}
+.tab:hover{color:var(--paper);}
+.tab.active{color:var(--amber); border-bottom-color:var(--amber);}
+.page{display:none;}
+.page.active{display:block;}
+
+/* ===== Filter bar ===== */
+.filter-bar{display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; align-items:center;}
+.filter-bar select, .filter-bar input, .filter-bar button{
+  background:var(--panel); color:var(--paper); border:1px solid var(--line-strong);
+  border-radius:4px; padding:8px 12px; font-family:'IBM Plex Mono'; font-size:12px;
+}
+.filter-bar button{cursor:pointer;}
+.filter-bar button:hover{border-color:var(--amber); color:var(--amber);}
+.filter-bar .tag{
+  font-family:'IBM Plex Mono'; font-size:11px; color:var(--steel); letter-spacing:.06em;
+}
+
+/* ===== Section labels ===== */
+.section-label{
+  display:flex; align-items:center; gap:12px;
+  font-family:'IBM Plex Mono'; font-size:12px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--steel);
+  margin: 34px 0 14px;
+}
+.section-label:first-child{margin-top:0;}
+.section-label::after{
+  content:""; flex:1; height:1px;
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 12px);
+}
+
+/* ===== KPI row ===== */
+.kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+.kpi{
+  background: var(--panel);
+  border:1px solid var(--line-strong);
+  border-radius:6px;
+  padding:18px 18px 16px;
+  position:relative;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+.kpi::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:3px;
+  background: var(--accent, var(--amber));
+}
+.kpi::after{
+  /* blister-pack perforation */
+  content:"";
+  position:absolute; top:9px; left:0; right:0; height:0;
+  border-top:2px dotted rgba(243,236,217,0.14);
+}
+.kpi .lbl{font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:.1em; color:var(--steel); text-transform:uppercase;}
+.kpi .val{font-family:'IBM Plex Mono'; font-weight:700; font-size:24px; margin-top:8px; color:var(--paper);}
+.kpi .sub{font-size:11.5px; color:var(--paper-dim); margin-top:4px;}
+.kpi.sales{--accent:var(--green);}
+.kpi.purchase{--accent:var(--rust);}
+.kpi.profit{--accent:var(--amber);}
+.kpi.cash{--accent:var(--rx);}
+.kpi.bank{--accent:var(--steel);}
+
+/* ===== Grid layout ===== */
+.grid-2{display:grid; grid-template-columns: 1.3fr 1fr; gap:16px;}
+.grid-3{display:grid; grid-template-columns: repeat(3,1fr); gap:16px;}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line-strong);
+  border-radius:6px;
+  padding:18px 18px 8px;
+  box-shadow: var(--shadow);
+}
+.panel h3{
+  font-family:'Big Shoulders Display'; font-weight:700; text-transform:uppercase;
+  letter-spacing:.02em; font-size:18px; margin:0 0 14px; color:var(--paper);
+  display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px;
+}
+.panel h3 small{font-family:'IBM Plex Mono'; font-size:11px; color:var(--steel); text-transform:none; letter-spacing:0;}
+canvas{max-width:100%;}
+
+/* ===== Tables ===== */
+table{width:100%; border-collapse:collapse; font-size:12.5px;}
+thead th{
+  text-align:left; font-family:'IBM Plex Mono'; font-size:10.5px; cursor:pointer; user-select:none;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--steel);
+  padding:8px 6px; border-bottom:1px solid var(--line-strong);
+}
+thead th:hover{color:var(--amber);}
+tbody td{padding:8px 6px; border-bottom:1px solid var(--line); color:var(--paper-dim);}
+tbody tr:hover td{background: var(--amber-soft); color:var(--paper);}
+td.num, th.num{text-align:right; font-family:'IBM Plex Mono';}
+td.name{color:var(--paper); font-weight:500;}
+.pill{
+  display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px;
+  font-family:'IBM Plex Mono'; letter-spacing:.04em;
+}
+.pill.d30{background:var(--rust-soft); color:#e8957c;}
+.pill.d60{background:var(--amber-soft); color:#e4bd7c;}
+.pill.d90{background:var(--rx-soft); color:#9fcac5;}
+.pos{color:#a9c897;}
+.neg{color:#e8957c;}
+
+footer{
+  margin-top:40px; padding-top:16px; border-top:1px solid var(--line-strong);
+  font-family:'IBM Plex Mono'; font-size:11px; color:var(--steel);
+  display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+}
+.loading-note{font-family:'IBM Plex Mono'; font-size:12px; color:var(--steel); padding: 30px 0; text-align:center;}
+
+@media (max-width: 900px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .grid-2, .grid-3{grid-template-columns:1fr;}
+  .tabs{overflow-x:auto; flex-wrap:nowrap;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="titleblock">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-title">MEDILOOM</div>
+        <div class="brand-sub">Pharmacy</div>
+        <div class="eyebrow" id="periodLabel">Business Intelligence Dashboard</div>
+      </div>
+    </div>
+    <div class="stamp">RX VERIFIED<b id="recordCount">0 records loaded</b></div>
+  </div>
+
+  <div class="banner" id="statusBanner"></div>
+
+  <div class="filter-bar">
+    <span class="tag">RANGE</span>
+    <select id="rangeFilter">
+      <option value="7">Last 7 Days</option>
+      <option value="30">Last 30 Days</option>
+      <option value="month">This Month</option>
+      <option value="lastmonth">Last Month</option>
+      <option value="custom">Custom Range</option>
+      <option value="all" selected>All Time</option>
+    </select>
+    <span class="tag" id="customTag" style="display:none;">FROM</span>
+    <input type="date" id="customFrom" style="display:none;">
+    <span class="tag" id="customToTag" style="display:none;">TO</span>
+    <input type="date" id="customTo" style="display:none;">
+    <span class="tag">SUPPLIER</span>
+    <select id="supplierFilter"><option value="All">All Suppliers</option></select>
+    <button id="resetFilters">Reset</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-page="overview">Overview</button>
+    <button class="tab" data-page="sales">Sales Intelligence</button>
+    <button class="tab" data-page="purchase">Purchase Intelligence</button>
+    <button class="tab" data-page="cashflow">Cash Flow</button>
+    <button class="tab" data-page="expiry">Expiry Watch</button>
+  </div>
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <div class="page active" id="page-overview">
+    <div class="kpi-row">
+      <div class="kpi sales"><div class="lbl">Total Sales</div><div class="val" id="kpiSales">—</div><div class="sub">Software Generated Sales</div></div>
+      <div class="kpi purchase"><div class="lbl">Total Purchase</div><div class="val" id="kpiPurchase">—</div><div class="sub">Software Generated Purchase</div></div>
+      <div class="kpi profit"><div class="lbl">Software Profit</div><div class="val" id="kpiProfit">—</div><div class="sub">From Report sheet (reference only)</div></div>
+      <div class="kpi cash"><div class="lbl">Cash Collection</div><div class="val" id="kpiCash">—</div><div class="sub">From billing report</div></div>
+      <div class="kpi bank"><div class="lbl">Bank Collection</div><div class="val" id="kpiBank">—</div><div class="sub">From billing report</div></div>
+      <div class="kpi cash"><div class="lbl">Cash Balance</div><div class="val" id="kpiCashBal">—</div><div class="sub">Daily Financial Tracking</div></div>
+      <div class="kpi bank"><div class="lbl">Bank Balance</div><div class="val" id="kpiBankBal">—</div><div class="sub">Daily Financial Tracking</div></div>
+      <div class="kpi purchase"><div class="lbl">Total Daily Balance</div><div class="val" id="kpiDailyBal">—</div><div class="sub">Cash + Bank position</div></div>
+    </div>
+
+    <div class="section-label">Trend</div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Sales vs Purchase <small id="trendPeriod">₹ per day</small></h3>
+        <canvas id="trendChart" height="260"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Weekday Performance <small>Sales by day of week</small></h3>
+        <canvas id="weekdayChart" height="260"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SALES ===================== -->
+  <div class="page" id="page-sales">
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="kpi sales"><div class="lbl">Total Invoices</div><div class="val" id="kpiInvoices">—</div><div class="sub">Distinct sales entries</div></div>
+      <div class="kpi profit"><div class="lbl">Avg Invoice Value</div><div class="val" id="kpiAvgInvoice">—</div><div class="sub">Total sales / invoices</div></div>
+      <div class="kpi cash"><div class="lbl">Best Sales Day</div><div class="val" id="kpiBestDay" style="font-size:16px;">—</div><div class="sub">Highest single-day revenue</div></div>
+      <div class="kpi bank"><div class="lbl">Best Weekday</div><div class="val" id="kpiBestWeekday" style="font-size:16px;">—</div><div class="sub">Highest average revenue</div></div>
+    </div>
+
+    <div class="section-label">Medicine Intelligence</div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Top 15 Medicines <small>by revenue</small></h3>
+        <canvas id="topMedChart" height="300"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Top Medicines <small>by quantity sold</small></h3>
+        <table><thead><tr><th>Medicine</th><th class="num">Qty</th><th class="num">Revenue</th></tr></thead><tbody id="topMedQtyTable"></tbody></table>
+      </div>
+    </div>
+
+    <div class="section-label">Billing</div>
+    <div class="panel">
+      <h3>Highest Billing Days <small>top 12</small></h3>
+      <table><thead><tr><th>Date</th><th class="num">Invoices</th><th class="num">Cash</th><th class="num">Bank</th><th class="num">Total</th></tr></thead><tbody id="billingTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ===================== PURCHASE ===================== -->
+  <div class="page" id="page-purchase">
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Monthly Purchase Trend</h3>
+        <canvas id="purchaseTrendChart" height="260"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Supplier Spend <small>share of total</small></h3>
+        <canvas id="supplierDonut" height="260"></canvas>
+      </div>
+    </div>
+    <div class="section-label">Suppliers</div>
+    <div class="panel">
+      <h3>Top Suppliers <small>by purchase value</small></h3>
+      <table><thead><tr><th>Supplier</th><th class="num">Orders</th><th class="num">Total Purchase</th><th class="num">Share %</th></tr></thead><tbody id="supplierTable"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ===================== CASH FLOW ===================== -->
+  <div class="page" id="page-cashflow">
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="kpi cash"><div class="lbl">Cash In</div><div class="val" id="kpiCashIn">—</div><div class="sub">Daily Financial Tracking</div></div>
+      <div class="kpi purchase"><div class="lbl">Cash Out / Expenses</div><div class="val" id="kpiCashOut">—</div><div class="sub">Daily Financial Tracking</div></div>
+      <div class="kpi bank"><div class="lbl">Deposits</div><div class="val" id="kpiDeposits">—</div><div class="sub">Cash sent to bank</div></div>
+      <div class="kpi profit"><div class="lbl">Credit Sales</div><div class="val" id="kpiCredit">—</div><div class="sub">Outstanding customer credit</div></div>
+    </div>
+    <div class="section-label">Flow</div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Cash vs Bank Split</h3>
+        <canvas id="cashBankChart" height="260"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Daily Balance Trend</h3>
+        <canvas id="balanceTrendChart" height="260"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== EXPIRY ===================== -->
+  <div class="page" id="page-expiry">
+    <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);">
+      <div class="kpi purchase"><div class="lbl">Expiring in 30 Days</div><div class="val" id="kpiExp30">—</div><div class="sub">Batches at risk</div></div>
+      <div class="kpi profit"><div class="lbl">Expiring in 60 Days</div><div class="val" id="kpiExp60">—</div><div class="sub">Batches to monitor</div></div>
+      <div class="kpi cash"><div class="lbl">Expiring in 90 Days</div><div class="val" id="kpiExp90">—</div><div class="sub">Forward visibility</div></div>
+    </div>
+    <div class="section-label">Expiry Watch <small style="font-family:'IBM Plex Mono';font-size:11px;color:var(--steel);text-transform:none;">click headers to sort</small></div>
+    <div class="panel">
+      <table>
+        <thead><tr>
+          <th data-k="name">Medicine</th><th data-k="batch">Batch</th><th data-k="supplier">Supplier</th>
+          <th class="num" data-k="qty">Qty</th><th data-k="exp">Expiry</th><th class="num" data-k="days">Days Left</th>
+        </tr></thead>
+        <tbody id="expiryTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <span>MEDILOOM PHARMACY · Live from Software Generated Sales / Purchase / Report + Daily Financial Tracking</span>
+    <span>Figures in INR (₹) · Business-level profit only — medicine-wise costing pending purchase-rate data</span>
+  </footer>
+</div>
+
+<script>
+Chart.defaults.color = '#cdc4a4';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.borderColor = 'rgba(201,169,89,0.10)';
+
+/* ============ CONFIG — point these at your two Apps Script endpoints ============ */
+const REPORT_API  = "https://script.google.com/macros/s/AKfycbwwMKhnRLHQPMO74J7z8lVUA1DaBSAFM9QDqwRuNo7w6FuECbUXDeCMZ6pGR7dkBjsM/exec"; // sales, purchase, report
+const FINANCE_API = "https://script.google.com/macros/s/AKfycbyF5UUOgyZD25QFzQlH1nBbQUndbTqonWB7-abiSqwmEQ2mC00v9oepvmmB4OxWMkvqxw/exec"; // finance
+
+const fmt = n => '₹' + Math.round(n||0).toLocaleString('en-IN');
+const banner = document.getElementById('statusBanner');
+const warnings = [];
+function warn(msg){ warnings.push(msg); banner.classList.add('show'); banner.innerHTML = warnings.map(w=>'⚠ '+w).join('<br>'); }
+
+/* ---------- column detection: keyword match with letter-position fallback ---------- */
+function letterIdx(letter){ return letter.toUpperCase().charCodeAt(0) - 65; }
+function findCol(headers, keywords, fallbackLetter){
+  const low = headers.map(h => String(h||'').toLowerCase());
+  for(const kw of keywords){
+    const i = low.findIndex(h => h.includes(kw));
+    if(i !== -1) return i;
+  }
+  return fallbackLetter ? letterIdx(fallbackLetter) : -1;
+}
+function rowsToObjects(matrix, colMap){
+  if(!matrix || matrix.length < 2) return [];
+  const headers = matrix[0];
+  const idx = {};
+  for(const key in colMap){ idx[key] = findCol(headers, colMap[key].kw, colMap[key].fallback); }
+  const out = [];
+  for(let r = 1; r < matrix.length; r++){
+    const row = matrix[r];
+    if(!row || row.every(c => c === "" || c === null || c === undefined)) continue;
+    const obj = {};
+    for(const key in idx){ obj[key] = idx[key] >= 0 ? row[idx[key]] : undefined; }
+    out.push(obj);
+  }
+  return out;
+}
+function num(v){ if(v===undefined||v===null||v==='') return 0; const n = Number(String(v).replace(/,/g,'')); return isNaN(n) ? 0 : n; }
+function toDate(v){ if(!v) return null; const d = v instanceof Date ? v : new Date(v); return isNaN(d) ? null : d; }
+
+const SALES_MAP = {
+  date:      { kw:['date'], fallback:'A' },
+  invoiceNo: { kw:['invoice','bill no'], fallback:'C' },
+  party:     { kw:['party','customer'], fallback:'D' },
+  itemName:  { kw:['item name','item','medicine','product'], fallback:'K' },
+  batch:     { kw:['batch'], fallback:'M' },
+  expDate:   { kw:['exp date','expiry','exp'], fallback:'N' },
+  qty:       { kw:['qty','quantity'], fallback:'O' },
+  taxable:   { kw:['taxable'], fallback:'Q' },
+  netTotal:  { kw:['net total','net amt','netamount'], fallback:'X' },
+};
+const PURCHASE_MAP = {
+  date:      { kw:['date'], fallback:'A' },
+  supplier:  { kw:['party','supplier'], fallback:'D' },
+  itemName:  { kw:['item name','item','medicine','product'], fallback:'K' },
+  batch:     { kw:['batch'], fallback:'M' },
+  expDate:   { kw:['exp date','expiry','exp'], fallback:'N' },
+  qty:       { kw:['qty','quantity'], fallback:'O' },
+  taxable:   { kw:['taxable'], fallback:'Q' },
+  netTotal:  { kw:['net total','net amt','netamount'], fallback:'X' },
+};
+const REPORT_MAP = {
+  date:        { kw:['date'], fallback:'B' },
+  salesNo:     { kw:['sales no'], fallback:'C' },
+  totalAmount: { kw:['total amount','total amt'], fallback:'M' },
+  cash:        { kw:['cash'], fallback:'N' },
+  bank:        { kw:['bank'], fallback:'O' },
+  profit:      { kw:['profit'], fallback:'P' },
+};
+const FINANCE_KEYWORDS = {
+  date:          ['date'],
+  cashIn:        ['cash in','cash received','cash collection'],
+  cashOut:       ['cash out','expense','cash spent'],
+  bankIn:        ['bank in','deposit'],
+  bankOut:       ['bank out','withdrawal'],
+  creditSales:   ['credit sale','credit'],
+  cashBalance:   ['cash balance','closing cash'],
+  bankBalance:   ['bank balance','closing bank'],
+};
+
+let salesData = [], purchaseData = [], reportData = [], financeRows = [];
+let filteredSales = [], filteredPurchase = [];
+const charts = {};
+
+function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+/* ============ FETCH ============ */
+Promise.allSettled([
+  fetch(REPORT_API).then(r=>r.json()),
+  fetch(FINANCE_API).then(r=>r.json())
+]).then(([reportRes, financeRes])=>{
+
+  if(reportRes.status === 'fulfilled'){
+    const d = reportRes.value;
+    salesData    = rowsToObjects(d.sales, SALES_MAP);
+    purchaseData = rowsToObjects(d.purchase, PURCHASE_MAP);
+    reportData   = rowsToObjects(d.report, REPORT_MAP);
+  } else {
+    warn('Could not load the Sales/Purchase/Report API. Check the REPORT_API endpoint and deployment access.');
+  }
+
+  if(financeRes.status === 'fulfilled'){
+    const fd = financeRes.value;
+    const matrix = fd.finance;
+    if(matrix && matrix.length > 1){
+      const headers = matrix[0].map(h=>String(h||'').toLowerCase());
+      financeRows = matrix.slice(1).map(row=>{
+        const obj = {};
+        headers.forEach((h,i)=>{ obj[h] = row[i]; });
+        return obj;
+      });
+    } else {
+      warn('Finance sheet returned no rows — cash flow cards will show —.');
+    }
+  } else {
+    warn('Could not load the Daily Financial Tracking API. Cash/Bank balance cards will show —.');
+  }
+
+  document.getElementById('recordCount').textContent =
+    `${salesData.length + purchaseData.length + reportData.length} records loaded`;
+
+  populateSupplierFilter();
+  applyFilters();
+}).catch(err=>{
+  warn('Unexpected error loading data: ' + err.message);
+});
+
+/* ============ FILTERS ============ */
+function populateSupplierFilter(){
+  const sel = document.getElementById('supplierFilter');
+  const suppliers = [...new Set(purchaseData.map(r=>r.supplier).filter(Boolean))].sort();
+  suppliers.forEach(s=>{ sel.innerHTML += `<option value="${s}">${s}</option>`; });
+}
+function inRange(date, rangeVal){
+  if(!date) return false;
+  if(rangeVal === 'all') return true;
+  const now = new Date();
+  if(rangeVal === 'month'){
+    return date.getMonth()===now.getMonth() && date.getFullYear()===now.getFullYear();
+  }
+  if(rangeVal === 'lastmonth'){
+    const lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    return date.getMonth()===lm.getMonth() && date.getFullYear()===lm.getFullYear();
+  }
+  if(rangeVal === 'custom'){
+    const fromVal = document.getElementById('customFrom').value;
+    const toVal = document.getElementById('customTo').value;
+    if(!fromVal && !toVal) return true;
+    const from = fromVal ? new Date(fromVal+'T00:00:00') : null;
+    const to = toVal ? new Date(toVal+'T23:59:59') : null;
+    if(from && date < from) return false;
+    if(to && date > to) return false;
+    return true;
+  }
+  const days = Number(rangeVal);
+  const cutoff = new Date(); cutoff.setDate(now.getDate()-days);
+  return date >= cutoff;
+}
+function updateCustomVisibility(){
+  const isCustom = document.getElementById('rangeFilter').value === 'custom';
+  ['customTag','customFrom','customToTag','customTo'].forEach(id=>{
+    document.getElementById(id).style.display = isCustom ? 'inline-block' : 'none';
+  });
+}
+function applyFilters(){
+  updateCustomVisibility();
+  const range = document.getElementById('rangeFilter').value;
+  const supplier = document.getElementById('supplierFilter').value;
+
+  filteredSales = salesData.filter(r => inRange(toDate(r.date), range));
+  filteredPurchase = purchaseData.filter(r => inRange(toDate(r.date), range) && (supplier==='All' || r.supplier===supplier));
+
+  const dates = salesData.map(r=>toDate(r.date)).filter(Boolean);
+  if(dates.length){
+    const min = new Date(Math.min(...dates)), max = new Date(Math.max(...dates));
+    const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('periodLabel').textContent =
+      `Business Intelligence Dashboard · ${mo[min.getMonth()]} ${min.getFullYear()} – ${mo[max.getMonth()]} ${max.getFullYear()}`;
+  }
+
+  renderOverview();
+  renderSales();
+  renderPurchase();
+  renderCashflow();
+  renderExpiry();
+}
+document.getElementById('rangeFilter').addEventListener('change', applyFilters);
+document.getElementById('supplierFilter').addEventListener('change', applyFilters);
+document.getElementById('customFrom').addEventListener('change', applyFilters);
+document.getElementById('customTo').addEventListener('change', applyFilters);
+document.getElementById('resetFilters').addEventListener('click', ()=>{
+  document.getElementById('rangeFilter').value='all';
+  document.getElementById('supplierFilter').value='All';
+  document.getElementById('customFrom').value='';
+  document.getElementById('customTo').value='';
+  applyFilters();
+});
+
+/* ============ TABS ============ */
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-'+btn.dataset.page).classList.add('active');
+  });
+});
+
+/* ============ OVERVIEW ============ */
+function renderOverview(){
+  const totalSales = filteredSales.reduce((s,r)=>s+num(r.netTotal),0);
+  const totalPurchase = filteredPurchase.reduce((s,r)=>s+num(r.netTotal),0);
+  const totalProfit = reportData.reduce((s,r)=>s+num(r.profit),0);
+  const totalCash = reportData.reduce((s,r)=>s+num(r.cash),0);
+  const totalBank = reportData.reduce((s,r)=>s+num(r.bank),0);
+
+  document.getElementById('kpiSales').textContent = fmt(totalSales);
+  document.getElementById('kpiPurchase').textContent = fmt(totalPurchase);
+  document.getElementById('kpiProfit').textContent = fmt(totalProfit);
+  document.getElementById('kpiCash').textContent = fmt(totalCash);
+  document.getElementById('kpiBank').textContent = fmt(totalBank);
+
+  const cashBal = findFinanceValue(FINANCE_KEYWORDS.cashBalance);
+  const bankBal = findFinanceValue(FINANCE_KEYWORDS.bankBalance);
+  document.getElementById('kpiCashBal').textContent = cashBal===null ? '—' : fmt(cashBal);
+  document.getElementById('kpiBankBal').textContent = bankBal===null ? '—' : fmt(bankBal);
+  document.getElementById('kpiDailyBal').textContent = (cashBal===null || bankBal===null) ? '—' : fmt(cashBal+bankBal);
+
+  // Sales vs Purchase daily trend
+  const byDate = {};
+  filteredSales.forEach(r=>{ const d=toDate(r.date); if(!d) return; const k=d.toISOString().slice(0,10);
+    byDate[k] = byDate[k] || {sales:0,purchase:0}; byDate[k].sales += num(r.netTotal); });
+  filteredPurchase.forEach(r=>{ const d=toDate(r.date); if(!d) return; const k=d.toISOString().slice(0,10);
+    byDate[k] = byDate[k] || {sales:0,purchase:0}; byDate[k].purchase += num(r.netTotal); });
+  const labels = Object.keys(byDate).sort();
+  destroyChart('trend');
+  charts.trend = new Chart(document.getElementById('trendChart'), {
+    type:'line',
+    data:{ labels: labels.map(l=>l.slice(5)),
+      datasets:[
+        {label:'Sales', data: labels.map(l=>byDate[l].sales), borderColor:'#6f9d6d', backgroundColor:'rgba(111,157,109,0.16)', fill:true, tension:.35, pointRadius:2, borderWidth:2.5},
+        {label:'Purchase', data: labels.map(l=>byDate[l].purchase), borderColor:'#c1502e', backgroundColor:'rgba(193,80,46,0.12)', fill:true, tension:.35, pointRadius:2, borderWidth:2.5}
+      ]},
+    options:{responsive:true, maintainAspectRatio:true, aspectRatio:2.1,
+      plugins:{legend:{labels:{boxWidth:12,font:{family:"'IBM Plex Mono'",size:11}}}},
+      scales:{y:{ticks:{callback:v=>'₹'+(v/1000)+'k'}}}}
+  });
+
+  // weekday performance
+  const wdNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const wdTotals = [0,0,0,0,0,0,0];
+  filteredSales.forEach(r=>{ const d=toDate(r.date); if(!d) return; wdTotals[d.getDay()] += num(r.netTotal); });
+  destroyChart('weekday');
+  charts.weekday = new Chart(document.getElementById('weekdayChart'), {
+    type:'bar',
+    data:{ labels: wdNames, datasets:[{data:wdTotals, backgroundColor:'#cf9f43', barPercentage:0.6}]},
+    options:{responsive:true, maintainAspectRatio:true, aspectRatio:2.1,
+      plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>'₹'+(v/1000)+'k'}}}}
+  });
+}
+function findFinanceValue(keywords){
+  if(!financeRows.length) return null;
+  const last = financeRows[financeRows.length-1];
+  for(const key in last){
+    if(keywords.some(kw => key.includes(kw))) return num(last[key]);
+  }
+  return null;
+}
+
+/* ============ SALES ============ */
+function renderSales(){
+  document.getElementById('kpiInvoices').textContent = filteredSales.length.toLocaleString('en-IN');
+  const totalSales = filteredSales.reduce((s,r)=>s+num(r.netTotal),0);
+  document.getElementById('kpiAvgInvoice').textContent = filteredSales.length ? fmt(totalSales/filteredSales.length) : '—';
+
+  const byDate = {};
+  filteredSales.forEach(r=>{ const d=toDate(r.date); if(!d) return; const k=d.toISOString().slice(0,10);
+    byDate[k] = (byDate[k]||0) + num(r.netTotal); });
+  const bestDateEntry = Object.entries(byDate).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('kpiBestDay').textContent = bestDateEntry ? `${bestDateEntry[0]} · ${fmt(bestDateEntry[1])}` : '—';
+
+  const wdNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const wdTotals = [0,0,0,0,0,0,0], wdCounts=[0,0,0,0,0,0,0];
+  filteredSales.forEach(r=>{ const d=toDate(r.date); if(!d) return; wdTotals[d.getDay()] += num(r.netTotal); wdCounts[d.getDay()]++; });
+  const wdAvg = wdTotals.map((t,i)=> wdCounts[i] ? t/wdCounts[i] : 0);
+  const bestWdIdx = wdAvg.indexOf(Math.max(...wdAvg));
+  document.getElementById('kpiBestWeekday').textContent = wdCounts[bestWdIdx] ? `${wdNames[bestWdIdx]} · avg ${fmt(wdAvg[bestWdIdx])}` : '—';
+
+  // top medicines by revenue
+  const medMap = {};
+  filteredSales.forEach(r=>{
+    const name = r.itemName || 'Unknown';
+    if(!medMap[name]) medMap[name] = {qty:0, revenue:0};
+    medMap[name].qty += num(r.qty);
+    medMap[name].revenue += num(r.netTotal);
+  });
+  const topByRevenue = Object.entries(medMap).map(([name,v])=>({name,...v})).sort((a,b)=>b.revenue-a.revenue).slice(0,15);
+  destroyChart('topMed');
+  charts.topMed = new Chart(document.getElementById('topMedChart'), {
+    type:'bar',
+    data:{ labels: topByRevenue.map(m=>m.name), datasets:[{data: topByRevenue.map(m=>m.revenue), backgroundColor:'#cf9f43', barPercentage:0.7}]},
+    options:{responsive:true, maintainAspectRatio:true, aspectRatio:1.1, indexAxis:'y',
+      plugins:{legend:{display:false}}, scales:{y:{ticks:{autoSkip:false, font:{size:10.5}}}}}
+  });
+
+  const topByQty = Object.entries(medMap).map(([name,v])=>({name,...v})).sort((a,b)=>b.qty-a.qty).slice(0,15);
+  document.getElementById('topMedQtyTable').innerHTML = topByQty.map(m=>
+    `<tr><td class="name">${m.name}</td><td class="num">${m.qty.toLocaleString('en-IN')}</td><td class="num">${fmt(m.revenue)}</td></tr>`
+  ).join('') || `<tr><td colspan="3" style="text-align:center;color:var(--steel);">No data in this range</td></tr>`;
+
+  // highest billing days (from report sheet)
+  const billMap = {};
+  reportData.forEach(r=>{ const d=toDate(r.date); if(!d) return; const k=d.toISOString().slice(0,10);
+    if(!billMap[k]) billMap[k]={count:0,cash:0,bank:0,total:0};
+    billMap[k].count++; billMap[k].cash+=num(r.cash); billMap[k].bank+=num(r.bank); billMap[k].total+=num(r.totalAmount);
+  });
+  const topBilling = Object.entries(billMap).map(([date,v])=>({date,...v})).sort((a,b)=>b.total-a.total).slice(0,12);
+  document.getElementById('billingTable').innerHTML = topBilling.map(b=>
+    `<tr><td class="name">${b.date}</td><td class="num">${b.count}</td><td class="num">${fmt(b.cash)}</td><td class="num">${fmt(b.bank)}</td><td class="num">${fmt(b.total)}</td></tr>`
+  ).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--steel);">No billing data available</td></tr>`;
+}
+
+/* ============ PURCHASE ============ */
+function renderPurchase(){
+  const byMonth = {};
+  filteredPurchase.forEach(r=>{ const d=toDate(r.date); if(!d) return;
+    const k = d.toLocaleString('en-US',{month:'short',year:'2-digit'});
+    byMonth[k] = (byMonth[k]||0) + num(r.netTotal); });
+  destroyChart('purchaseTrend');
+  charts.purchaseTrend = new Chart(document.getElementById('purchaseTrendChart'), {
+    type:'bar',
+    data:{ labels: Object.keys(byMonth), datasets:[{data: Object.values(byMonth), backgroundColor:'#c1502e', barPercentage:0.6}]},
+    options:{responsive:true, maintainAspectRatio:true, aspectRatio:2,
+      plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>'₹'+(v/1000)+'k'}}}}
+  });
+
+  const supMap = {};
+  filteredPurchase.forEach(r=>{ const s = r.supplier || 'Unknown';
+    if(!supMap[s]) supMap[s] = {orders:0, total:0};
+    supMap[s].orders++; supMap[s].total += num(r.netTotal); });
+  const supTotal = Object.values(supMap).reduce((s,v)=>s+v.total,0);
+  const supSorted = Object.entries(supMap).map(([name,v])=>({name,...v})).sort((a,b)=>b.total-a.total);
+  const top8 = supSorted.slice(0,8);
+  const otherTotal = supSorted.slice(8).reduce((s,v)=>s+v.total,0);
+  const donutLabels = top8.map(s=>s.name).concat(otherTotal>0 ? ['Others']:[]);
+  const donutData = top8.map(s=>s.total).concat(otherTotal>0 ? [otherTotal]:[]);
+  const palette = ['#cf9f43','#c1502e','#6f9d6d','#5b8f8a','#7e9a95','#e4bd7c','#9fcac5','#e8957c','#8a7a5e'];
+  destroyChart('supplierDonut');
+  charts.supplierDonut = new Chart(document.getElementById('supplierDonut'), {
+    type:'doughnut',
+    data:{ labels: donutLabels, datasets:[{data: donutData, backgroundColor: palette}]},
+    options:{responsive:true, maintainAspectRatio:true, aspectRatio:1.4,
+      plugins:{legend:{position:'right', labels:{boxWidth:10, font:{family:"'IBM Plex Mono'", size:10.5}}}}}
+  });
+
+  document.getElementById('supplierTable').innerHTML = supSorted.slice(0,20).map(s=>
+    `<tr><td class="name">${s.name}</td><td class="num">${s.orders}</td><td class="num">${fmt(s.total)}</td><td class="num">${supTotal? (s.total/supTotal*100).toFixed(1):'0.0'}%</td></tr>`
+  ).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--steel);">No purchase data in this range</td></tr>`;
+}
+
+/* ============ CASH FLOW ============ */
+function renderCashflow(){
+  const cashIn = sumFinance(FINANCE_KEYWORDS.cashIn);
+  const cashOut = sumFinance(FINANCE_KEYWORDS.cashOut);
+  const deposits = sumFinance(FINANCE_KEYWORDS.bankIn);
+  const credit = sumFinance(FINANCE_KEYWORDS.creditSales);
+  document.getElementById('kpiCashIn').textContent = cashIn===null?'—':fmt(cashIn);
+  document.getElementById('kpiCashOut').textContent = cashOut===null?'—':fmt(cashOut);
+  document.getElementById('kpiDeposits').textContent = deposits===null?'—':fmt(deposits);
+  document.getElementById('kpiCredit').textContent = credit===null?'—':fmt(credit);
+
+  const totalCash = reportData.reduce((s,r)=>s+num(r.cash),0);
+  const totalBank = reportData.reduce((s,r)=>s+num(r.bank),0);
+  destroyChart('cashBank');
+  charts.cashBank = new Chart(document.getElementById('cashBankChart'), {
+    type:'doughnut',
+    data:{ labels:['Cash','Bank'], datasets:[{data:[totalCash,totalBank], backgroundColor:['#cf9f43','#5b8f8a']}]},
+    options:{responsive:true, maintainAspectRatio:true, aspectRatio:1.6,
+      plugins:{legend:{position:'bottom', labels:{font:{family:"'IBM Plex Mono'", size:11}}}}}
+  });
+
+  if(financeRows.length){
+    const dateKey = Object.keys(financeRows[0]).find(k=>k.includes('date'));
+    const balKey = Object.keys(financeRows[0]).find(k=>FINANCE_KEYWORDS.cashBalance.some(kw=>k.includes(kw)) || FINANCE_KEYWORDS.bankBalance.some(kw=>k.includes(kw)));
+    const labels = financeRows.map(r=>dateKey? String(r[dateKey]).slice(0,10) : '');
+    const vals = financeRows.map(r=> balKey ? num(r[balKey]) : 0);
+    destroyChart('balanceTrend');
+    charts.balanceTrend = new Chart(document.getElementById('balanceTrendChart'), {
+      type:'line',
+      data:{ labels, datasets:[{label:'Balance', data: vals, borderColor:'#cf9f43', backgroundColor:'rgba(207,159,67,0.14)', fill:true, tension:.3, pointRadius:1, borderWidth:2}]},
+      options:{responsive:true, maintainAspectRatio:true, aspectRatio:2,
+        plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>'₹'+(v/1000)+'k'}}}}
+    });
+  }
+}
+function sumFinance(keywords){
+  if(!financeRows.length) return null;
+  let found = false, total = 0;
+  financeRows.forEach(row=>{
+    for(const key in row){
+      if(keywords.some(kw=>key.includes(kw))){ total += num(row[key]); found = true; }
+    }
+  });
+  return found ? total : null;
+}
+
+/* ============ EXPIRY ============ */
+let expiryRows = [], expirySort = {key:'days', dir:1};
+function renderExpiry(){
+  const now = new Date();
+  expiryRows = purchaseData.map(r=>{
+    const exp = toDate(r.expDate);
+    const days = exp ? Math.round((exp-now)/86400000) : null;
+    return { name:r.itemName||'Unknown', batch:r.batch||'—', supplier:r.supplier||'—', qty:num(r.qty), exp: exp?exp.toISOString().slice(0,10):'—', days };
+  }).filter(r=>r.days !== null && r.days >= 0 && r.days <= 90);
+
+  document.getElementById('kpiExp30').textContent = expiryRows.filter(r=>r.days<=30).length;
+  document.getElementById('kpiExp60').textContent = expiryRows.filter(r=>r.days<=60).length;
+  document.getElementById('kpiExp90').textContent = expiryRows.filter(r=>r.days<=90).length;
+
+  drawExpiryTable();
+}
+function drawExpiryTable(){
+  const sorted = [...expiryRows].sort((a,b)=>{
+    const k = expirySort.key;
+    if(typeof a[k] === 'number') return (a[k]-b[k])*expirySort.dir;
+    return String(a[k]).localeCompare(String(b[k]))*expirySort.dir;
+  });
+  document.getElementById('expiryTable').innerHTML = sorted.slice(0,200).map(r=>{
+    const pill = r.days<=30 ? 'd30' : r.days<=60 ? 'd60' : 'd90';
+    return `<tr><td class="name">${r.name}</td><td>${r.batch}</td><td>${r.supplier}</td><td class="num">${r.qty}</td><td>${r.exp}</td><td class="num"><span class="pill ${pill}">${r.days} d</span></td></tr>`;
+  }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--steel);">No items expiring within 90 days</td></tr>`;
+}
+document.querySelectorAll('#page-expiry thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const k = th.dataset.k;
+    expirySort.dir = (expirySort.key === k) ? -expirySort.dir : 1;
+    expirySort.key = k;
+    drawExpiryTable();
+  });
+});
+</script>
+</body>
+</html>
